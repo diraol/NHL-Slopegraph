@@ -11,30 +11,30 @@
 </head>
 <body>
 
+  <div class='panel left' id="slopegraph"></div>
+  <div class='panel right'>
 
-	<div class='panel' id="slopegraph"></div>
-	<div class='panel'>
-	
-	<h2>NHL Standings Slopegraph</h2>
+  <h2>NHL Standings Slopegraph</h2>
     <p>
-	    Visualization of the 2012-13 NHL standings as a modified <a href="http://www.edwardtufte.com/bboard/q-and-a-fetch-msg?msg_id=0003nk">slopegraph</a>.
-	    The two sides of the slopegraph are ordered based on ranking/points.  Use the controls below to switch between the Eastern 
-	    and Western conferences, and to adjust the start and end date ranges. 
-	    Teams that are <span class="playoff">red</span> denote ones that are currently in playoff position.
-	</p>	
+      Visualization of the 2012-13 NHL standings as a modified <a href="http://www.edwardtufte.com/bboard/q-and-a-fetch-msg?msg_id=0003nk">slopegraph</a>.
+      The two sides of the slopegraph are ordered based on ranking/points.  Use the controls below to switch between the Eastern
+      and Western conferences, and to adjust the start and end date ranges.
+      Teams that are <span class="playoff">red</span> denote ones that are currently in playoff position.
+  </p>
 
-	<div id="controls">
-			<p>
-			Conference: <select id="conferenceSelect">
-				<option value="westernConference">Western Conference</option>
-				<option value="easternConference">Eastern Conference</option>
-			</select>
+  <div id="controls">
+      <p>
+      Conference: <select id="conferenceSelect">
+        <option value="westernConference">Western Conference</option>
+        <option value="easternConference">Eastern Conference</option>
+      </select>
+      </p>
+      <ul id="datesSelectors">
+        <li>Left Date: <select id="leftDateSelect" class="dateSelector"></select></li>
+        <li>Right Date: <select id="rightDateSelect" class="dateSelector"></select></li>
+      </ul>
 
-			Left Date: <select id="leftDateSelect"></select>
-			Right Date: <select id="rightDateSelect"></select>
-
-	</p>
-	</div>
+  </div>
 
 </div>
 
