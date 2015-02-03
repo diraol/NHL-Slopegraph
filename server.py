@@ -1,9 +1,9 @@
 #dummy server to simply serve up my page for development/testing
-
+import os
 from bottle import route,run,request,response,install,uninstall,static_file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-
-STATIC_ROOT = '/Users/nstehr/nhl_slopegraph/static'
+STATIC_ROOT = BASE_DIR + '/static'
 
 @route('/')
 def index():
