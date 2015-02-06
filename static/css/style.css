@@ -25,6 +25,11 @@
   padding-left: 0;
 }
 
+.singleTitle {
+  font-size: 13px;
+  font-family: 'Julius Sans One';
+}
+
 .playoff {
   color: crimson;
 }
