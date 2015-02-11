@@ -8,12 +8,36 @@ var multislope = function(){
       fontSize: 12,
       fontFamily: 'Julius Sans One',
       numberOfDates: 3,
-      leftMargin: 5,
-    },
+      leftMargin: 5
+    }
  };
 
   var init = function(){
-    $.getJSON('static/data.json', function(data) {
+    $("#numberOfDates")[0].value = config.settings.numberOfDates;
+
+    $.getJSON('static/newdata.json', function(data) {
+
+      /* This JSON file has the format:
+      [
+        {
+          'date1': "xxxxxxxx",
+          'values': [
+            { 'points': XX, 'team': "teamname" },
+            { 'points': XY, 'team': "teamname2" },
+            ....
+          ]
+        },
+        {
+          'date2': "xxaqsxasx",
+          'values': [
+            { 'points': XX, 'team': "teamname" },
+            { 'points': XY, 'team': "teamname2" },
+            ...
+         ]
+        },
+        ....
+      ]
+      // */
 
       var dates = $.map(data,function(value,index){return value['date']});
       $.each(dates, function(key, value) {
@@ -24,25 +48,50 @@ var multislope = function(){
 
       //callback for listening to when the date selects change
       var onSelectChanged = function(){
+        var currentNumberOfDates = config.settings.numberOfDates;
+        var newNumberOfDates = $("#numberOfDates").value();
+        var selectedDates = $("[id|='dateSelected']");
+        if (newNumberOfDates > currentNumberOfDates) {
+          while (currentNumberOfDates < newNumberOfDates){
+            $("#datesSelectors").append(
+                $('<li>').append(
+                    $('<select>').attr({
+                      'id': "dateSelect-" + (newNumberOfDates - currentNumberOfDates - 1),
+                      'class': 'dateSelector'
+                    }).append(
+                        $("#dateSelect-1 option")
+                    )
+                )
+            );
+            currentNumberOfDates = currentNumberOfDates + 1;
+          }
+        } else if (currentNumberOfDates < newNumberOfDates) {
+          // Remove "N" selects
+          // Remove the slope graphs respective to that selects.
+        }
+
+        var indexes = [];
+        $("[id|='dateSelect']").each(function(key,value){
+          indexes.push($(value).val());
+        });
+
         var leftIndex = $('#leftDateSelect').val();
         var centerIndex = $('#centerDateSelect').val();
         var rightIndex = $('#rightDateSelect').val();
+
         if(parseInt(leftIndex) <= parseInt(centerIndex) && parseInt(centerIndex) <= parseInt(rightIndex)){
           var leftData = data[leftIndex];
           var centerData = data[centerIndex];
           var rightData = data[rightIndex];
-          var conferenceKey = $('#conferenceSelect').val();
-          var conferenceText = $("#conferenceSelect option:selected").text();
 
           selecteds = [leftData,centerData,rightData];
-          renderStandings(chart,selecteds,{'key':conferenceKey,'title':conferenceText});
+          renderStandings(chart,selecteds);
         }
-      }
+      };
 
       $('#leftDateSelect').change(onSelectChanged);
       $('#rightDateSelect').change(onSelectChanged);
       $('#centerDateSelect').change(onSelectChanged);
-      $('#conferenceSelect').change(onSelectChanged);
 
       //set the left select to initially be the lowest date
       $('#leftDateSelect').val(0);
@@ -62,17 +111,16 @@ var multislope = function(){
 
       //initial rendering of the graph
       selecteds = [leftData,centerData,rightData];
-      renderStandings(chart,selecteds,{'key':'westernConference','title':'Western Conference'});
+      renderStandings(chart,selecteds);
     });
-  }
+  };
 
-  function renderStandings(chart,selecteds,conferenceName){
+  function renderStandings(chart, selecteds){
 
     // Function that manages slope columns titles (add or update)
         // The ID is the column ID, starting at zero.
     function manageTitles(id, text) {
       title = chart.select("#title"+id);
-      console.log(title.empty());
       if (title.empty()) {
         titleGroup.append('text')
           .attr('x', config.settings.leftMargin + id*300)
@@ -88,12 +136,11 @@ var multislope = function(){
     var left = selecteds[0];
     var center = selecteds[1];
     var right = selecteds[2];
-    var conference = conferenceName.key;
     var leftDate = left.date;
     var centerDate = center.date;
     var rightDate = right.date;
 
-    var titleGroup = chart.select('.titleGroup')
+    var titleGroup = chart.select('.titleGroup');
     //add a title based on the conference and dates
     if(titleGroup.empty()){
       titleGroup = chart.append("g");
@@ -104,32 +151,14 @@ var multislope = function(){
     manageTitles(1, centerDate);
     manageTitles(2, rightDate);
 
-    //  //left hand date
-    //  titleGroup.append('text')
-    //    .attr('x', 10)
-    //    .attr('y', 20)
-    //    .attr('font-family',config.settings.fontFamily)
-    //    .attr('font-size',13)
-    //    .attr('id','leftDate')
-    //    .text(leftDate);
-
-    //  //right hand date
-    //  titleGroup.append('text')
-    //    .attr('x', 700)
-    //    .attr('y', 20)
-    //    .attr('font-family',config.settings.fontFamily)
-    //    .attr('font-size',13)
-    //    .attr('id','rightDate')
-    //    .text(rightDate);
-
     //get all the points into arrays
-    var conferencePointsLeft = $.map(left[conference],function(value,index){
+    var conferencePointsLeft = $.map(left["values"],function(value,index){
           return value['points'];
       });
-    var conferencePointsCenter = $.map(center[conference],function(value,index){
+    var conferencePointsCenter = $.map(center["values"],function(value,index){
         return value['points'];
-    })
-    var conferencePointsRight = $.map(right[conference],function(value,index){
+    });
+    var conferencePointsRight = $.map(right["values"],function(value,index){
             return value['points'];
         });
 
@@ -145,16 +174,16 @@ var multislope = function(){
             .range([config.settings.graphHeight-300,60]);
 
     //setup the y coordinates for each data point
-    for(var i=0;i<left[conference].length;i++){
-      var val = left[conference][i];
+    for(var i=0;i<left["values"].length;i++){
+      var val = left["values"][i];
       val.yCoord = leftY(val.points);
     }
-    for(var i=0;i<center[conference].length;i++){
-      var val = center[conference][i];
+    for(var i=0;i<center["values"].length;i++){
+      var val = center["values"][i];
       val.yCoord = centerY(val.points);
     }
-    for(var i=0;i<right[conference].length;i++){
-      var val = right[conference][i];
+    for(var i=0;i<right["values"].length;i++){
+      var val = right["values"][i];
       val.yCoord = rightY(val.points);
     }
 
@@ -164,9 +193,9 @@ var multislope = function(){
     * that cause overlapping text, apply a simple
     * algorithm to adjust the positions to look nice
     */
-      adjustYCoords(left[conference]);
-      adjustYCoords(center[conference]);
-      adjustYCoords(right[conference]);
+      adjustYCoords(left["values"]);
+      adjustYCoords(center["values"]);
+      adjustYCoords(right["values"]);
 
     var leftGroup = chart.select('.leftGroup');
     if(leftGroup.empty()){
@@ -181,7 +210,7 @@ var multislope = function(){
     * so that when an update is performed, it can find existing elements
     *
     */
-    var leftTeams = leftGroup.selectAll("text").data(left[conference],function(d) { return d.team; });
+    var leftTeams = leftGroup.selectAll("text").data(left["values"],function(d) { return d.team; });
 
     //add teams if necessary
     leftTeams
@@ -208,7 +237,7 @@ var multislope = function(){
       leftPointsGroup.attr("class","leftGroupPoints");
     }
 
-    var leftPoints = leftPointsGroup.selectAll("text").data(left[conference],function(d) { return d.team; });
+    var leftPoints = leftPointsGroup.selectAll("text").data(left["values"],function(d) { return d.team; });
     leftPoints.enter().append("text")
       .attr("x",200)
       .attr('y', function(d,i){return d.yCoord})
@@ -229,7 +258,7 @@ var multislope = function(){
     }
 
     //setup the center side teams and points
-    var centerTeams = centerGroup.selectAll("text").data(center[conference],function(d) { return d.team; });
+    var centerTeams = centerGroup.selectAll("text").data(center["values"],function(d) { return d.team; });
 
     centerTeams.enter().append("text")
       .attr("x",400)
@@ -251,7 +280,7 @@ var multislope = function(){
          centerPointsGroup.attr("class","centerGroupPoints");
        }
 
-    var centerPoints = centerPointsGroup.selectAll("text").data(center[conference],function(d) { return d.team; });
+    var centerPoints = centerPointsGroup.selectAll("text").data(center["values"],function(d) { return d.team; });
       centerPoints.enter().append("text")
         .attr("x",350)
         .attr('y', function(d,i){return d.yCoord})
@@ -272,7 +301,7 @@ var multislope = function(){
     }
 
     //setup the right side teams and points
-    var rightTeams = rightGroup.selectAll("text").data(right[conference],function(d) { return d.team; });
+    var rightTeams = rightGroup.selectAll("text").data(right["values"],function(d) { return d.team; });
 
     rightTeams.enter().append("text")
       .attr("x",700)
@@ -294,7 +323,7 @@ var multislope = function(){
       rightPointsGroup.attr("class","rightGroupPoints");
     }
 
-    var rightPoints = rightPointsGroup.selectAll("text").data(right[conference],function(d) { return d.team; });
+    var rightPoints = rightPointsGroup.selectAll("text").data(right["values"],function(d) { return d.team; });
     rightPoints.enter().append("text")
       .attr("x",650)
       .attr('y', function(d,i){return d.yCoord})
@@ -310,14 +339,14 @@ var multislope = function(){
 
     //combine the coord values for drawing the slopes
     var slopes = [];
-    for(var i=0;i<left[conference].length;i++){
-      var val = left[conference][i];
+    for(var i=0;i<left["values"].length;i++){
+      var val = left["values"][i];
       var slope = {};
       slope.left = val.yCoord;
-      for(var j=0;j<center[conference].length;j++){
-        if(val.team === center[conference][j].team){
-          slope.center = center[conference][j].yCoord;
-          slope.team = center[conference][j].team;
+      for(var j=0;j<center["values"].length;j++){
+        if(val.team === center["values"][j].team){
+          slope.center = center["values"][j].yCoord;
+          slope.team = center["values"][j].team;
           break;
         }
       }
@@ -396,14 +425,14 @@ var multislope = function(){
     centerEndPoints.exit().remove();
 
     var slopes2 = [];
-    for(var i=0;i<center[conference].length;i++){
-      var val = center[conference][i];
+    for(var i=0;i<center["values"].length;i++){
+      var val = center["values"][i];
       var slope2 = {};
       slope2.center = val.yCoord;
-      for(var j=0;j<right[conference].length;j++){
-        if(val.team === right[conference][j].team){
-          slope2.right = right[conference][j].yCoord;
-          slope2.team = right[conference][j].team;
+      for(var j=0;j<right["values"].length;j++){
+        if(val.team === right["values"][j].team){
+          slope2.right = right["values"][j].yCoord;
+          slope2.team = right["values"][j].team;
           break;
         }
       }
